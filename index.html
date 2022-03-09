@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>React Todo App</title>
+        <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+        <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+        <!-- <script src="https://unpkg.com/react-router-dom@5.0.0/umd/react-router-dom.min.js"></script> -->
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+        <!-- Bootstrap Css Start -->
+        <!-- <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+            crossorigin="anonymous"
+        /> -->
+        <!-- Bootstrap Css End -->
+        <link rel="stylesheet" href="todo-with-hooks.css" />
+    </head>
+    <body>
+        <div id="mydiv"></div>
+        <script type="text/babel">
+            const { useState, useEffect, createContext, useContext, useRef } = React;
+
+            /* TodoApp Component Start */
+
+            function TodoApp() {
+                return (
+                    <DataProvider>
+                        <div className="App">
+                            <h1 style={{ marginBottom: "10px" }}>What're your tasks today?</h1>
+
+                            <FormInput />
+
+                            <List />
+
+                            <Footer />
+                        </div>
+                    </DataProvider>
+                );
+            }
+
+            /* TodoApp Component Start */
+
+            /* FormInput Component Start */
+
+            const FormInput = () => {
+                const [todos, setTodos] = useContext(DataContext);
+                const [todoName, setTodoName] = useState("");
+                const todoInput = useRef();
+
+                const addTodo = (e) => {
+                    e.preventDefault();
+                    setTodoName("");
+                    setTodos([...todos, { name: todoName, complete: false }]);
+                    todoInput.current.focus();
+                };
+
+                useEffect(() => {
+                    todoInput.current.focus();
+                });
+
+                return (
+                    <>
+                        <form autoComplete="off" onSubmit={addTodo}>
+                            <input type="text" name="todos" required placeholder="What needs to be done?" value={todoName} onChange={(e) => setTodoName(e.target.value)} ref={todoInput} />
+                            <button type="submit">Create</button>
+                        </form>
+                    </>
+                );
+            };
+
+            /* FormInput Component Start */
+
+            /* List Component Start */
+
+            const List = () => {
+                const [todos, setTodos] = useContext(DataContext);
+
+                const switchComplete = (id) => {
+                    const newTodos = [...todos];
+                    newTodos.forEach((todo, index) => {
+                        if (index === id) {
+                            todo.complete = !todo.complete;
+                        }
+                    });
+                    setTodos(newTodos);
+                };
+
+                const handleEditTodos = (editValue, id) => {
+                    const newTodos = [...todos];
+                    newTodos.forEach((todo, index) => {
+                        if (index === id) {
+                            todo.name = editValue;
+                        }
+                    });
+                    setTodos(newTodos);
+                };
+
+                return (
+                    <>
+                        <div>
+                            <ul>
+                                {todos.map((todo, index) => (
+                                    <ListItem todo={todo} key={index} id={index} checkComplete={switchComplete} handleEditTodos={handleEditTodos} />
+                                ))}
+                            </ul>
+                        </div>
+                    </>
+                );
+            };
+
+            /* List Component Start */
+
+            /* ListItem Component Start */
+
+            const ListItem = ({ todo, id, checkComplete, handleEditTodos }) => {
+                const [onEdit, setOnEdit] = useState(false);
+                const [editValue, setEditValue] = useState(todo.name);
+                const handleOnEdit = () => {
+                    setOnEdit(true);
+                };
+                const handleSave = (id) => {
+                    setOnEdit(false);
+                    if (editValue) {
+                        handleEditTodos(editValue, id);
+                    } else {
+                        setEditValue(todo.name);
+                    }
+                };
+                if (onEdit) {
+                    return (
+                        <>
+                            <div>
+                                <ul>
+                                    <li>
+                                        <input type="text" id="editValue" value={editValue} onChange={(e) => setEditValue(e.target.value)} />
+
+                                        <button disabled={todo.complete} onClick={() => handleSave(id)}>
+                                            Update
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </>
+                    );
+                } else {
+                    return (
+                        <>
+                            <div>
+                                <ul>
+                                    <li>
+                                        <label htmlFor={id} className={todo.complete ? "active" : ""}>
+                                            <input type="checkbox" id={id} checked={todo.complete} onChange={() => checkComplete(id)} />
+                                            {todo.name}
+                                        </label>
+                                        <button disabled={todo.complete} onClick={handleOnEdit}>
+                                            Edit
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </>
+                    );
+                }
+            };
+
+            /* ListItem Component Start */
+
+            /* Footer Component Start */
+
+            const Footer = () => {
+                const [checkAll, setCheckAll] = useState(false);
+                const [todos, setTodos] = useContext(DataContext);
+
+                const handleCheckAll = () => {
+                    const newTodos = [...todos];
+                    newTodos.forEach((todo) => {
+                        todo.complete = !checkAll;
+                    });
+                    setTodos(newTodos);
+                    setCheckAll(!checkAll);
+                };
+
+                const handleDelete = () => {
+                    const newTodos = todos.filter((todo) => {
+                        return todo.complete === false;
+                    });
+                    setTodos(newTodos);
+                    setCheckAll(false);
+                };
+                return (
+                    <>
+                        {todos.length === 0 ? (
+                            <h3 style={{ textAlign: "center", margin: "100px 0", color: "green" }}>You have no To Do right now!</h3>
+                        ) : (
+                            <div className="row">
+                                <label htmlFor="all">
+                                    <input type="checkbox" name="all" id="all" onClick={handleCheckAll} />
+                                    All
+                                </label>
+                                <p>You have {todos.length} to do</p>
+                                <button id="delete" onClick={handleDelete}>
+                                    Delete
+                                </button>
+                            </div>
+                        )}
+                    </>
+                );
+            };
+
+            /* Footer Component Start */
+
+            /* DataProvider Component Start */
+
+            const DataContext = createContext();
+
+            const DataProvider = ({ children }) => {
+                const [todos, setTodos] = useState([]);
+                useEffect(() => {
+                    const todostore = JSON.parse(localStorage.getItem("todostore"));
+                    if (todostore) {
+                        setTodos(todostore);
+                    }
+                }, []);
+
+                useEffect(() => {
+                    localStorage.setItem("todostore", JSON.stringify(todos));
+                }, [todos]);
+                return (
+                    <>
+                        <DataContext.Provider value={[todos, setTodos]}>{children}</DataContext.Provider>
+                    </>
+                );
+            };
+
+            /* DataProvider Component Start */
+
+            ReactDOM.render(<TodoApp />, document.getElementById("mydiv"));
+        </script>
+    </body>
+</html>
